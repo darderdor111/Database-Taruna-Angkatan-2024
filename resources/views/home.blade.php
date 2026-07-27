@@ -106,9 +106,14 @@
             vertical-align: middle;
         }
         body {
-            background-color: #f9f9ff;
-            color: #111c2d;
             font-family: 'Inter', sans-serif;
+            background-color: #f9f9ff;
+            /* Efek bayangan (watermark) samar agar gambar gedung tidak terlalu cerah */
+            background-image: linear-gradient(rgba(249, 249, 255, 0.85), rgba(249, 249, 255, 0.85)), url('{{ asset("images/gedung-stmkg.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
         }
         .hero-gradient {
             background: linear-gradient(180deg, rgba(0, 39, 67, 0.03) 0%, rgba(255, 255, 255, 0) 100%);

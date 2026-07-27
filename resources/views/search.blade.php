@@ -95,6 +95,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f9f9ff;
+            color: #111c2d;
             width: 100%;
             margin: 0;
             overflow-x: hidden;
