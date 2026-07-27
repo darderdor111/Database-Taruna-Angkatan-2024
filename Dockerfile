@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Install dependency sistem & ekstensi PHP yang dibutuhkan Laravel
+# 1. Install dependency sistem & ekstensi PHP
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -13,33 +13,31 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     && docker-php-ext-install pdo pdo_sqlite zip bcmath mbstring gd fileinfo
 
-# Izinkan Composer berjalan sebagai root
-ENV COMPOSER_ALLOW_SUPERUSER=1
+# 2. Install Node.js & NPM (untuk build assets Vite/Tailwind)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
 
-# Aktifkan mod_rewrite Apache
+# 3. Konfigurasi Apache & Composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN a2enmod rewrite
 
-# Ubah DocumentRoot Apache ke /public
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Set working directory
 WORKDIR /var/www/html
-
-# Copy seluruh file project
 COPY . .
 
-# Install Composer
+# 4. Install PHP & Node Dependencies
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Install dependency Laravel
 RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
 
-# Buat direktori & file sqlite awal
+# Build frontend assets (jika project menggunakan Vite/NPM)
+RUN if [ -f package.json ]; then npm install && npm run build; fi
+
+# 5. Siapkan folder database & hak akses awal
 RUN mkdir -p database && touch database/database.sqlite
-RUN chown -R www-data:www-data storage bootstrap/cache database
+RUN chown -R www-data:www-data /var/www/html
 RUN chmod -R 775 storage bootstrap/cache database
 
-# Otomatis pastikan file sqlite ada, izinkan hak akses, dan jalankan migration saat startup
-CMD ["sh", "-c", "mkdir -p database && touch database/database.sqlite && chmod -R 777 database && chown -R www-data:www-data storage bootstrap/cache database && php artisan migrate --force && apache2-foreground"]
+# 6. Perintah Startup: Migrate database, perbaiki izin ke www-data, lalu jalankan Apache
+CMD ["sh", "-c", "touch database/database.sqlite && php artisan config:clear && php artisan migrate --force && chown -R www-data:www-data database storage bootstrap/cache && chmod -R 777 database storage && apache2-foreground"]
