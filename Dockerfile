@@ -36,10 +36,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Install dependency Laravel
 RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
 
-# Buat file database SQLite dan atur izin folder
-RUN mkdir -p database
-RUN touch database/database.sqlite
+# Buat direktori & file sqlite awal
+RUN mkdir -p database && touch database/database.sqlite
 RUN chown -R www-data:www-data storage bootstrap/cache database
+RUN chmod -R 775 storage bootstrap/cache database
 
-# Otomatis buat tabel database (migrate) saat server Docker menyala
-CMD ["sh", "-c", "touch database/database.sqlite && chown -R www-data:www-data database && php artisan migrate --force && apache2-foreground"]
+# Otomatis pastikan file sqlite ada, izinkan hak akses, dan jalankan migration saat startup
+CMD ["sh", "-c", "mkdir -p database && touch database/database.sqlite && chmod -R 777 database && chown -R www-data:www-data storage bootstrap/cache database && php artisan migrate --force && apache2-foreground"]
